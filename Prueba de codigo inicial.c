@@ -1,146 +1,122 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-typedef struct Cliente{
-    char Rut[12];
-    char Nombre[50];
-    int Numero_entradas;
-}Cliente;
-typedef struct ClienteEntrada{
-    Cliente cliente;
-    struct ClienteEntrada* siguiente;
-}ClienteEntrada;
-ClienteEntrada* crear_nodo(Cliente cliente){
-    ClienteEntrada* nuevo_nodo = (ClienteEntrada*)malloc(sizeof(ClienteEntrada));
-    nuevo_nodo->cliente = cliente;
-    nuevo_nodo->siguiente = NULL;
-    return nuevo_nodo;
+
+struct Nodo {
+    char rut[20];
+    char nombre[100];
+    int valor;
+    struct Nodo* izquierda;
+    struct Nodo* derecha;
+};
+
+struct Nodo* crearNodo(char rut[], char nombre[], int valor) {
+    struct Nodo* nodo = (struct Nodo*)malloc(sizeof(struct Nodo));
+    strcpy(nodo->rut, rut);
+    strcpy(nodo->nombre, nombre);
+    nodo->valor = valor;
+    nodo->izquierda = NULL;
+    nodo->derecha = NULL;
+    return nodo;
 }
-typedef struct NodoCliente {
-    Cliente cliente;
-    struct NodoCliente* siguiente;
-} NodoCliente;
-NodoCliente* lista_clientes_asignados = NULL;
-NodoCliente* lista_clientes_espera = NULL;
-void guardar_lista_en_archivo_asigandos(NodoCliente* lista){
-    FILE* archivo;
-    archivo = fopen("clientes.asg", "w");
-    if (archivo == NULL) {
-        printf("Error al abrir el archivo.\n");
-        return;
+
+struct Nodo* insertar(struct Nodo* raiz, struct Nodo* nodo) {
+    if (raiz == NULL) {
+        return nodo;
     }
-    NodoCliente* actual = lista;
-    while (actual != NULL) {
-        fprintf(archivo, "%s %s %d\n", actual->cliente.Rut, actual->cliente.Nombre, actual->cliente.Numero_entradas);
-        actual = actual->siguiente;
+
+    if (strcmp(raiz->rut, nodo->rut) < 0) {
+        raiz->derecha = insertar(raiz->derecha, nodo);
+    } else if (strcmp(raiz->rut, nodo->rut) > 0) {
+        raiz->izquierda = insertar(raiz->izquierda, nodo);
+    } else {
+        raiz->valor += nodo->valor;
+        free(nodo);
     }
-    fclose(archivo);
+
+    return raiz;
 }
-void guardar_lista_en_archivo_Espera(NodoCliente* lista){
-    FILE* archivo;
-    archivo = fopen("clientes.esp", "w");
-    if (archivo == NULL) {
-        printf("Error al abrir el archivo.\n");
-        return;
-    }
-    NodoCliente* actual = lista;
-    while (actual != NULL) {
-        fprintf(archivo, "%s %s\n", actual->cliente.Rut, actual->cliente.Nombre);
-        actual = actual->siguiente;
-    }
-    fclose(archivo);
-}
-int abrir_leer_archivo(){
-	/* Declaramos la variable fichero como puntero a FILE. */
-	FILE *fichero;
-    FILE *fichero2;
-    FILE *fichero3;
-    ClienteEntrada* lista_clientes = NULL;
-    Cliente cliente;
-	/* Abrimos "fichero1.txt" en modo texto y
-	 * guardamos su direccion en el puntero. */
-	fichero = fopen("datos1.txt", "r");
-	fichero2 = fopen("datos2.txt", "r");
-    fichero3 = fopen("datos3.txt", "r");
-	if(fichero == NULL && fichero2 == NULL && fichero3 == NULL ){
-		/* Imprimimos un mensaje para indicar que no existe. */
-		printf("Los ficheros no se han podido abrir, no existen.");
-        return (-1);
-	} 
-    else {
-		/* Imprimimos mesaje de exito y la direccion para este ejemplo. */
-		printf("El fichero 1 existe y esta en la direccion: %p\n\n",fichero);
-		printf("El fichero 2 existe y esta en la direccion: %p\n\n",fichero2);
-        printf("El fichero 2 existe y esta en la direccion: %p\n\n",fichero3);
-        int leidos;
-        while ((leidos = fscanf(fichero,"%11[^,],%49[^,],%d%*c",cliente.Rut,cliente.Nombre,&cliente.Numero_entradas))==3){
-            /*printf("Cliente en fichero 1: %s %s %d\n",cliente.Rut, cliente.Nombre, cliente.Numero_entradas);*/
-            ClienteEntrada* actual = lista_clientes;
-            ClienteEntrada* anterior = NULL;
-            while (actual != NULL && strcmp(actual->cliente.Rut, cliente.Rut) < 0){
-                anterior = actual;
-                actual = actual->siguiente;
-            }
-            if (actual != NULL && strcmp(actual->cliente.Rut, cliente.Rut) == 0){
-                actual->cliente.Numero_entradas += cliente.Numero_entradas;
-            } 
-            else {
-                ClienteEntrada* nuevo_nodo = crear_nodo(cliente);
-                nuevo_nodo->siguiente = actual;
-                if (anterior == NULL){
-                    lista_clientes = nuevo_nodo;
-                } else {
-                    anterior->siguiente = nuevo_nodo;
-                }
-            }
+struct Nodo* buscarRut(const char rut[], struct Nodo* raiz);  // Prototipo de función
+void actualizarRuts(struct Nodo* raiz, FILE* archivo) {
+    if (raiz) {
+        actualizarRuts(raiz->izquierda, archivo);
+
+        struct Nodo* nodo = buscarRut(raiz->rut, raiz);
+        if (nodo != raiz) {
+            nodo->valor += raiz->valor;  // Sumar el valor al RUT repetido
+            free(raiz);
+        } else {
+            fprintf(archivo, "%s,%s,%d\n", raiz->rut, raiz->nombre, raiz->valor);
         }
-        printf("\n");
-        int leidos2;
-        while ((leidos2 = fscanf(fichero2,"%11[^,],%49[^,],%d%*c",cliente.Rut,cliente.Nombre,&cliente.Numero_entradas))==3){
-            /*printf("Cliente en fichero 2: %s %s %d\n",cliente.Rut, cliente.Nombre, cliente.Numero_entradas);*/
-            ClienteEntrada* actual = lista_clientes;
-            ClienteEntrada* anterior = NULL;
-            while (actual != NULL && strcmp(actual->cliente.Rut, cliente.Rut) < 0){
-                anterior = actual;
-                actual = actual->siguiente;
-            }
-            if (actual != NULL && strcmp(actual->cliente.Rut, cliente.Rut) == 0){
-                actual->cliente.Numero_entradas += cliente.Numero_entradas;
-            } else {
-                ClienteEntrada* nuevo_nodo = crear_nodo(cliente);
-                nuevo_nodo->siguiente = actual;
-                if (anterior == NULL){
-                    lista_clientes = nuevo_nodo;
-                } else {
-                    anterior->siguiente = nuevo_nodo;
-                }
-            }
-        }
-        printf("\n");
-        int leidos3;
-        while ((leidos3 = fscanf(fichero3,"%11[^,],%49[^,],%d%*c",cliente.Rut,cliente.Nombre,&cliente.Numero_entradas))==3){
-            /*printf("Cliente en fichero 2: %s %s %d\n",cliente.Rut, cliente.Nombre, cliente.Numero_entradas);*/
-            ClienteEntrada* actual = lista_clientes;
-            ClienteEntrada* anterior = NULL;
-            while (actual != NULL && strcmp(actual->cliente.Rut, cliente.Rut) < 0){
-                anterior = actual;
-                actual = actual->siguiente;
-            }
-            if (actual != NULL && strcmp(actual->cliente.Rut, cliente.Rut) == 0){
-                actual->cliente.Numero_entradas += cliente.Numero_entradas;
-            } else {
-                ClienteEntrada* nuevo_nodo = crear_nodo(cliente);
-                nuevo_nodo->siguiente = actual;
-                if (anterior == NULL){
-                    lista_clientes = nuevo_nodo;
-                } else {
-                    anterior->siguiente = nuevo_nodo;
-                }
-            }
-        }
+
+        actualizarRuts(raiz->derecha, archivo);
     }
 }
+
+struct Nodo* buscarRut(const char rut[], struct Nodo* raiz) {
+    if (raiz == NULL || strcmp(raiz->rut, rut) == 0) {
+        return raiz;
+    }
+
+    if (strcmp(raiz->rut, rut) < 0) {
+        return buscarRut(rut, raiz->derecha);
+    }
+
+    return buscarRut(rut, raiz->izquierda);
+}
+
+void liberarArbol(struct Nodo* raiz) {
+    if (raiz) {
+        liberarArbol(raiz->izquierda);
+        liberarArbol(raiz->derecha);
+        free(raiz);
+    }
+}
+
 int main() {
-    abrir_leer_archivo();
+    FILE* archivo1 = fopen("datos1.txt", "r");
+    FILE* archivo2 = fopen("datos2.txt", "r");
+    FILE* archivo3 = fopen("datos3.txt", "r");
+    FILE* archivoActualizado = fopen("datos_actualizados.txt", "w");
+
+    struct Nodo* arbol = NULL;
+
+    char linea[200];
+    while (fgets(linea, sizeof(linea), archivo1)) {
+        char rut[20], nombre[100];
+        int valor;
+        sscanf(linea, "%[^,],%[^,],%d", rut, nombre, &valor);
+
+        struct Nodo* nodo = crearNodo(rut, nombre, valor);
+        arbol = insertar(arbol, nodo);
+    }
+
+    while (fgets(linea, sizeof(linea), archivo2)) {
+        char rut[20], nombre[100];
+        int valor;
+        sscanf(linea, "%[^,],%[^,],%d", rut, nombre, &valor);
+
+        struct Nodo* nodo = crearNodo(rut, nombre, valor);
+        arbol = insertar(arbol, nodo);
+    }
+
+    while (fgets(linea, sizeof(linea), archivo3)) {
+        char rut[20], nombre[100];
+        int valor;
+        sscanf(linea, "%[^,],%[^,],%d", rut, nombre, &valor);
+
+        struct Nodo* nodo = crearNodo(rut, nombre, valor);
+        arbol = insertar(arbol, nodo);
+    }
+
+    actualizarRuts(arbol, archivoActualizado);
+
+    fclose(archivo1);
+    fclose(archivo2);
+    fclose(archivo3);
+    fclose(archivoActualizado);
+
+    liberarArbol(arbol);
+
     return 0;
 }
