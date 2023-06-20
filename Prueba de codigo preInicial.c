@@ -36,7 +36,9 @@ struct Nodo* insertar(struct Nodo* raiz, struct Nodo* nodo) {
 
     return raiz;
 }
+
 struct Nodo* buscarRut(const char rut[], struct Nodo* raiz);  // Prototipo de función
+
 void actualizarRuts(struct Nodo* raiz, FILE* archivo) {
     if (raiz) {
         actualizarRuts(raiz->izquierda, archivo);
@@ -74,8 +76,17 @@ void liberarArbol(struct Nodo* raiz) {
 }
 
 int main() {
-    FILE* archivo = fopen("datos1.txt", "r");  // Reemplaza "datos.txt" con el nombre de tu archivo
+    char nombreArchivo[100];
+    printf("Ingrese el nombre del archivo de entrada: ");
+    scanf("%s", nombreArchivo);
+
+    FILE* archivo = fopen(nombreArchivo, "r");
     FILE* archivoActualizado = fopen("datos_actualizados.txt", "w");  // Archivo para guardar los datos actualizados
+
+    if (archivo == NULL) {
+        printf("Error al abrir el archivo de entrada.\n");
+        return 1;
+    }
 
     struct Nodo* arbol = NULL;
 

@@ -36,7 +36,9 @@ struct Nodo* insertar(struct Nodo* raiz, struct Nodo* nodo) {
 
     return raiz;
 }
+
 struct Nodo* buscarRut(const char rut[], struct Nodo* raiz);  // Prototipo de función
+
 void actualizarRuts(struct Nodo* raiz, FILE* archivo) {
     if (raiz) {
         actualizarRuts(raiz->izquierda, archivo);
@@ -74,33 +76,22 @@ void liberarArbol(struct Nodo* raiz) {
 }
 
 int main() {
-    FILE* archivo1 = fopen("datos1.txt", "r");
-    FILE* archivo2 = fopen("datos2.txt", "r");
-    FILE* archivo3 = fopen("datos3.txt", "r");
-    FILE* archivoActualizado = fopen("datos_actualizados.txt", "w");
+    char nombreArchivo[100];
+    printf("Ingrese el nombre del archivo de entrada: ");
+    scanf("%s", nombreArchivo);
+
+    FILE* archivo = fopen(nombreArchivo, "r");
+    FILE* archivoActualizado = fopen("datos_actualizados.txt", "w");  // Archivo para guardar los datos actualizados
+
+    if (archivo == NULL) {
+        printf("Error al abrir el archivo de entrada.\n");
+        return 1;
+    }
 
     struct Nodo* arbol = NULL;
 
     char linea[200];
-    while (fgets(linea, sizeof(linea), archivo1)) {
-        char rut[20], nombre[100];
-        int valor;
-        sscanf(linea, "%[^,],%[^,],%d", rut, nombre, &valor);
-
-        struct Nodo* nodo = crearNodo(rut, nombre, valor);
-        arbol = insertar(arbol, nodo);
-    }
-
-    while (fgets(linea, sizeof(linea), archivo2)) {
-        char rut[20], nombre[100];
-        int valor;
-        sscanf(linea, "%[^,],%[^,],%d", rut, nombre, &valor);
-
-        struct Nodo* nodo = crearNodo(rut, nombre, valor);
-        arbol = insertar(arbol, nodo);
-    }
-
-    while (fgets(linea, sizeof(linea), archivo3)) {
+    while (fgets(linea, sizeof(linea), archivo)) {
         char rut[20], nombre[100];
         int valor;
         sscanf(linea, "%[^,],%[^,],%d", rut, nombre, &valor);
@@ -111,9 +102,7 @@ int main() {
 
     actualizarRuts(arbol, archivoActualizado);
 
-    fclose(archivo1);
-    fclose(archivo2);
-    fclose(archivo3);
+    fclose(archivo);
     fclose(archivoActualizado);
 
     liberarArbol(arbol);
