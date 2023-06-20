@@ -8,4 +8,8 @@
 20165233-4,rocio morales,1
 12432008-k,Juan pardo,5
 12432008-k,juan Pardo,6
+<<<<<<< HEAD
 12432008-k,juanpardo,4
+=======
+12432008-k,juanpardo,4
+>>>>>>> bcc745e09ac5ccca0342e9d21322c16fcef5bf6f
