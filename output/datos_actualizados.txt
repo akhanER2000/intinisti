@@ -1,5 +1,0 @@
-12333444-2,Maria Reyes,2
-12432008-k,Juan Pardo,18
-13444555-6,Pedro Diaz,3
-19000111-3,Jose Herrera,1
-20165233-4,Rocio Morales,5

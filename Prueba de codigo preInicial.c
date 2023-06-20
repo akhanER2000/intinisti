@@ -37,24 +37,6 @@ struct Nodo* insertar(struct Nodo* raiz, struct Nodo* nodo) {
     return raiz;
 }
 
-struct Nodo* buscarRut(const char rut[], struct Nodo* raiz);  // Prototipo de función
-
-void actualizarRuts(struct Nodo* raiz, FILE* archivo) {
-    if (raiz) {
-        actualizarRuts(raiz->izquierda, archivo);
-
-        struct Nodo* nodo = buscarRut(raiz->rut, raiz);
-        if (nodo != raiz) {
-            nodo->valor += raiz->valor;  // Sumar el valor al RUT repetido
-            free(raiz);
-        } else {
-            fprintf(archivo, "%s,%s,%d\n", raiz->rut, raiz->nombre, raiz->valor);
-        }
-
-        actualizarRuts(raiz->derecha, archivo);
-    }
-}
-
 struct Nodo* buscarRut(const char rut[], struct Nodo* raiz) {
     if (raiz == NULL || strcmp(raiz->rut, rut) == 0) {
         return raiz;
@@ -67,28 +49,22 @@ struct Nodo* buscarRut(const char rut[], struct Nodo* raiz) {
     return buscarRut(rut, raiz->izquierda);
 }
 
-void liberarArbol(struct Nodo* raiz) {
-    if (raiz) {
-        liberarArbol(raiz->izquierda);
-        liberarArbol(raiz->derecha);
-        free(raiz);
-    }
-}
+void generarArchivoSDE(const char* archivoEntrada) {
+    char archivoSalida[100];
+    strcpy(archivoSalida, archivoEntrada);
+    int len = strlen(archivoSalida);
+    strcpy(archivoSalida + len - 3, "sde");
 
-int main() {
-    char nombreArchivo[100];
-    printf("Ingrese el nombre del archivo de entrada: ");
-    scanf("%s", nombreArchivo);
+    FILE* archivo = fopen(archivoEntrada, "r");
+    FILE* archivoSalidaPtr = fopen(archivoSalida, "w");
 
-    FILE* archivo = fopen(nombreArchivo, "r");
-    FILE* archivoActualizado = fopen("datos_actualizados.txt", "w");  // Archivo para guardar los datos actualizados
-
-    if (archivo == NULL) {
-        printf("Error al abrir el archivo de entrada.\n");
-        return 1;
+    if (archivo == NULL || archivoSalidaPtr == NULL) {
+        printf("Error al abrir los archivos.\n");
+        return;
     }
 
     struct Nodo* arbol = NULL;
+    int totalPersonas = 0;
 
     char linea[200];
     while (fgets(linea, sizeof(linea), archivo)) {
@@ -98,14 +74,55 @@ int main() {
 
         struct Nodo* nodo = crearNodo(rut, nombre, valor);
         arbol = insertar(arbol, nodo);
+        totalPersonas++;
     }
 
-    actualizarRuts(arbol, archivoActualizado);
+    int personasMasDeDosEntradas = 0;
+    generarArchivoSDERecursivo(arbol, archivoSalidaPtr, &personasMasDeDosEntradas);
+
+    fprintf(archivoSalidaPtr, "Total de personas: %d\n", personasMasDeDosEntradas);
 
     fclose(archivo);
-    fclose(archivoActualizado);
+    fclose(archivoSalidaPtr);
 
     liberarArbol(arbol);
+
+    if (personasMasDeDosEntradas > 0) {
+        printf("El archivo %s fue generado.\n", archivoSalida);
+    } else {
+        remove(archivoSalida);
+        printf("Todos solicitaron la cantidad correcta de entradas.\n");
+    }
+}
+
+
+void generarArchivoSDERecursivo(struct Nodo* raiz, FILE* archivoSalida, int* contador) {
+    if (raiz) {
+        generarArchivoSDERecursivo(raiz->izquierda, archivoSalida, contador);
+
+        if (raiz->valor > 2) {
+            fprintf(archivoSalida, "%s, %s: %d\n", raiz->rut, raiz->nombre, raiz->valor);
+            (*contador)++;
+        }
+
+        generarArchivoSDERecursivo(raiz->derecha, archivoSalida, contador);
+    }
+}
+
+void liberarArbol(struct Nodo* raiz) {
+    if (raiz) {
+        liberarArbol(raiz->izquierda);
+        liberarArbol(raiz->derecha);
+        free(raiz);
+    }
+}
+
+int main() {
+    char archivoEntrada[100];
+    printf("Ingrese el nombre del archivo de entrada: ");
+    scanf("%s", archivoEntrada);
+
+    generarArchivoSDE(archivoEntrada);
 
     return 0;
 }
